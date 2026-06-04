@@ -475,29 +475,24 @@ export async function generateDietPlanAI(
   try {
     const ai = new GoogleGenAI({ apiKey });
     const prompt = `
-      You are an award-winning senior nutritionist and AI diet planner from a top health-tech startup. 
-      Generate a customized premium 1-day meal plan based on these user details:
-      - Age: ${age} years old
-      - Gender: ${gender}
-      - Height: ${height} cm
-      - Weight: ${weight} kg
-      - Activity Level: ${activityLevel}
+      You are an expert nutritionist and AI diet planner. Generate a customized 1-day meal plan based on:
+      - Age: ${age} years, Gender: ${gender}, Height: ${height} cm, Weight: ${weight} kg, Activity: ${activityLevel}
       - Goal: ${goal} (Calorie target: ${targetCalories} kcal)
       - Current BMI: ${bmi.toFixed(1)}
-      - Budget Category: ${budget} (Student Budget, Moderate, or Premium. Ensure ingredients and meal complexity reflect this.)
-      - Cuisine Preference: ${cuisine} (You MUST follow this style: e.g. for Kerala traditional, include Puttu, Kadala Curry, Matta Rice, Fish Curry, Avial, Thoran; for South Indian, include Dosa, Sambhar, Rasam, Idli; for North Indian, include Paneer, Dal Tadka, Paratha, Chappati, Bharta; Mixed Indian; or International.)
-      - Diet Type: ${dietType} (Strictly adhere to: Any, Vegetarian, Vegan, Eggetarian, Non-Vegetarian.)
-      - Goal Timeline: ${goalTimeline} (E.g. 1 Month, 3 Months, 6 Months. Align the recommendations and tips to this timeline.)
+      - Budget: ${budget} (Ensure ingredients/complexity match budget level)
+      - Cuisine: ${cuisine} (Integrate traditional dishes of this style, e.g. Puttu/Matta Rice/Fish Curry for Kerala; Paneer/Dal for North Indian)
+      - Diet Type: ${dietType} (Strictly: Any, Vegetarian, Vegan, Eggetarian, Non-Vegetarian)
+      - Goal Timeline: ${goalTimeline}
 
-      Generate 4 meals: breakfast, lunch, dinner, snack. Combined total calories must be around ${targetCalories} kcal (+/- 50 kcal).
-      Provide exact ingredients, step-by-step description of the dish, calories, protein (g), carbs (g), and fats (g) for each meal.
-      Include 4 actionable lifestyle or nutrition tips custom-tailored to their goal timeline.
+      Meals: breakfast, lunch, dinner, snack. Total calories must be around ${targetCalories} kcal (+/- 50 kcal).
+      Provide exact ingredients, a concise dish description, calories, protein (g), carbs (g), and fats (g) for each meal.
+      Include 4 actionable lifestyle/nutrition tips tailored to their timeline.
 
-      You MUST respond with a valid JSON object matching the following structure exactly. Do not include markdown code block formatting (like \`\`\`json) in your final response, just the raw JSON text:
+      You MUST respond with a JSON object matching this schema exactly:
       {
         "breakfast": {
           "name": "Meal Name",
-          "description": "Short description of the meal and preparation",
+          "description": "Concise preparation/dish description",
           "calories": number,
           "protein": number,
           "carbs": number,
@@ -506,7 +501,7 @@ export async function generateDietPlanAI(
         },
         "lunch": {
           "name": "Meal Name",
-          "description": "Short description of the meal",
+          "description": "Concise description",
           "calories": number,
           "protein": number,
           "carbs": number,
@@ -515,7 +510,7 @@ export async function generateDietPlanAI(
         },
         "dinner": {
           "name": "Meal Name",
-          "description": "Short description of the meal",
+          "description": "Concise description",
           "calories": number,
           "protein": number,
           "carbs": number,
@@ -524,7 +519,7 @@ export async function generateDietPlanAI(
         },
         "snack": {
           "name": "Meal Name",
-          "description": "Short description of the meal",
+          "description": "Concise description",
           "calories": number,
           "protein": number,
           "carbs": number,
@@ -698,15 +693,16 @@ function findLocalNutrition(query: string) {
   return null;
 }
 
-export async function askDietAdvisorAI(question: string): Promise<IAdvisorResponse> {
+export async function askDietAdvisorAI(question: string, userName?: string): Promise<IAdvisorResponse> {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
     console.log("No GEMINI_API_KEY. Using local Q&A engine.");
     const match = findLocalNutrition(question);
     if (match) {
+      const personalGreeting = userName ? `Hello ${userName}! ` : "";
       return {
-        answer: `${match.answer}\n\nHere is the nutritional breakdown for **${match.foodName}** (${match.portion}):`,
+        answer: `${personalGreeting}${match.answer}\n\nHere is the nutritional breakdown for **${match.foodName}** (${match.portion}):`,
         hasNutritionTable: true,
         nutrition: {
           foodName: match.foodName,
@@ -719,8 +715,9 @@ export async function askDietAdvisorAI(question: string): Promise<IAdvisorRespon
       };
     }
 
+    const personalGreeting = userName ? `Hello ${userName}! ` : "";
     return {
-      answer: `I am currently running in **Offline Mode**. \n\nI can provide nutritional breakdowns for popular local foods like: **paneer, matta rice, puttu, kadala curry, eggs, chicken, almonds, salmon, peanut butter, rice, oats, milk, bananas, and whey**.\n\nTo ask general nutrition questions or get personalized diet advice, please configure your \`GEMINI_API_KEY\` in your environment configuration!`,
+      answer: `I am currently running in **Offline Mode**. \n\n${personalGreeting}I can provide nutritional breakdowns for popular local foods like: **paneer, matta rice, puttu, kadala curry, eggs, chicken, almonds, salmon, peanut butter, rice, oats, milk, bananas, and whey**.\n\nTo ask general nutrition questions or get personalized diet advice, please configure your \`GEMINI_API_KEY\` in your environment configuration!`,
       hasNutritionTable: false,
     };
   }
@@ -729,6 +726,7 @@ export async function askDietAdvisorAI(question: string): Promise<IAdvisorRespon
     const ai = new GoogleGenAI({ apiKey });
     const prompt = `
       You are an expert nutritionist and diet assistant in a top health-tech startup. Answer the user's diet question or food inquiry.
+      ${userName ? `The user's name is ${userName}. Refer to them by their name naturally in your response where appropriate (e.g. "Sure, ${userName}, ..." or "Based on your goals, ${userName}, ...").` : ""}
       User Question: "${question}"
 
       If the user is asking about the calories or macronutrient content of a specific food item:

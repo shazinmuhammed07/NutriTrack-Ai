@@ -70,6 +70,9 @@ export default function CalculatePage() {
   const [formStep, setFormStep] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadingText, setLoadingText] = useState<string>("Analyzing metabolic profile...");
+  const [userName, setUserName] = useState<string>("");
+  const [isNameStored, setIsNameStored] = useState<boolean>(false);
 
   // Validation states
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -77,6 +80,9 @@ export default function CalculatePage() {
   const validateStep = (step: number): boolean => {
     const errors: Record<string, string> = {};
     if (step === 1) {
+      if (!isNameStored && !userName.trim()) {
+        errors.userName = "Please enter your name.";
+      }
       const ageNum = Number(age);
       if (!age || isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
         errors.age = "Please enter a valid age between 1 and 120.";
@@ -106,6 +112,15 @@ export default function CalculatePage() {
     }
   };
 
+  // Check if name is already stored in local storage
+  useEffect(() => {
+    const storedName = localStorage.getItem("nutritrack_user_name");
+    if (storedName) {
+      setUserName(storedName);
+      setIsNameStored(true);
+    }
+  }, []);
+
   // Real-time BMI indicator
   const [realtimeBmi, setRealtimeBmi] = useState<number | null>(null);
   useEffect(() => {
@@ -120,6 +135,31 @@ export default function CalculatePage() {
       setRealtimeBmi(null);
     }
   }, [height, weight]);
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingText("Analyzing metabolic profile...");
+      return;
+    }
+
+    const steps = [
+      "Analyzing metabolic profile...",
+      "Calculating Mifflin-St Jeor BMR metrics...",
+      "Formulating nutrient & macro ratios...",
+      "Assembling regional meal plans via clinical AI...",
+      "Finalizing recommendations and tips..."
+    ];
+
+    let currentStep = 0;
+    const interval = setInterval(() => {
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        setLoadingText(steps[currentStep]);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,6 +204,12 @@ export default function CalculatePage() {
         const planData: IDietPlanData = result.data;
         const userId = "default_user";
         
+        // Save user name to localStorage
+        if (!isNameStored && userName.trim()) {
+          localStorage.setItem("nutritrack_user_name", userName.trim());
+          setIsNameStored(true);
+        }
+
         // Save current active plan to localStorage scoped to user
         localStorage.setItem(`nutritrack_current_plan_${userId}`, JSON.stringify(planData));
 
@@ -230,7 +276,7 @@ export default function CalculatePage() {
 
       {/* Main content container */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-12">
-        <div className="w-full max-w-xl bg-white dark:bg-[#121214] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl p-6 sm:p-8 premium-shadow relative overflow-hidden transition-all duration-300">
+        <div className="w-full max-w-xl bg-white dark:bg-[#121214] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl p-5 sm:p-8 premium-shadow relative overflow-hidden transition-all duration-300">
           <div className="absolute top-0 left-0 right-0 h-1 bg-[#111111] dark:bg-[#fafafa]"></div>
 
           {/* Premium Stepper */}
@@ -283,8 +329,8 @@ export default function CalculatePage() {
                 </div>
               </div>
               <h3 className="text-xl font-bold tracking-tight mb-2">Formulating Your Intelligence Plan</h3>
-              <p className="text-xs text-[#71717a] dark:text-[#a1a1aa] max-w-sm leading-relaxed mb-6">
-                Our AI model is building a personalized nutrition strategy based on your cuisine selections, goals, and metabolic profiles.
+              <p className="text-xs text-[#71717a] dark:text-[#a1a1aa] max-w-sm leading-relaxed mb-6 font-medium animate-pulse">
+                {loadingText}
               </p>
               
               <div className="w-full max-w-xs bg-[#fafafa] dark:bg-[#09090b] rounded-xl border border-[#e4e4e7] dark:border-[#27272a] p-4 text-left text-[11px] space-y-2 text-[#71717a] dark:text-[#a1a1aa]">
@@ -308,6 +354,7 @@ export default function CalculatePage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              <fieldset disabled={loading} className="space-y-6 w-full border-0 p-0 m-0">
               
               {/* Step 1: Personal Info */}
               {formStep === 1 && (
@@ -315,6 +362,25 @@ export default function CalculatePage() {
                   <div className="border-b border-[#e4e4e7] dark:border-[#27272a] pb-3 mb-2">
                     <h3 className="text-sm font-bold uppercase tracking-wider text-[#71717a]">1. Personal Metrics</h3>
                   </div>
+
+                  {!isNameStored && (
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-[#71717a] mb-1.5 uppercase tracking-wider">What should we call you?</label>
+                      <input
+                        type="text"
+                        required
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        className={`w-full bg-[#fafafa] dark:bg-[#09090b] border ${validationErrors.userName ? "border-rose-500" : "border-[#e4e4e7] dark:border-[#27272a]"} focus:border-[#111111] dark:focus:border-[#fafafa] rounded-xl px-4 py-3 text-sm text-[#111111] dark:text-[#fafafa] focus:outline-none transition-all`}
+                        placeholder="Enter your name (e.g. Shazin)"
+                      />
+                      {validationErrors.userName && (
+                        <p className="text-[10px] text-rose-500 mt-1 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" /> {validationErrors.userName}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -539,21 +605,32 @@ export default function CalculatePage() {
                 {formStep > 1 && (
                   <button
                     type="button"
+                    disabled={loading}
                     onClick={handlePrevStep}
-                    className="flex-1 bg-[#fafafa] dark:bg-[#09090b] hover:bg-[#e4e4e7] dark:hover:bg-[#1c1c1f] border border-[#e4e4e7] dark:border-[#27272a] text-[#111111] dark:text-[#fafafa] font-bold py-3.5 rounded-xl transition-all cursor-pointer text-xs"
+                    className="flex-1 bg-[#fafafa] dark:bg-[#09090b] hover:bg-[#e4e4e7] dark:hover:bg-[#1c1c1f] border border-[#e4e4e7] dark:border-[#27272a] text-[#111111] dark:text-[#fafafa] font-bold py-3.5 rounded-xl transition-all cursor-pointer text-xs disabled:opacity-50"
                   >
-                    Previous Step
+                    <span className="hidden sm:inline">Previous Step</span>
+                    <span className="sm:hidden">Previous</span>
                   </button>
                 )}
                 
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={formStep === 3 ? handleSubmit : handleNextStep}
-                  className="flex-2 bg-[#111111] hover:bg-black dark:bg-[#fafafa] dark:hover:bg-white text-[#fafafa] dark:text-[#111111] font-bold py-3.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer text-xs"
+                  className="flex-2 bg-[#111111] hover:bg-black dark:bg-[#fafafa] dark:hover:bg-white text-[#fafafa] dark:text-[#111111] font-bold py-3.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer text-xs disabled:opacity-50"
                 >
-                  <span>{formStep === 3 ? "Generate Intelligence Plan" : "Continue"}</span>
+                  {formStep === 3 ? (
+                    <>
+                      <span className="hidden sm:inline">Generate Intelligence Plan</span>
+                      <span className="sm:hidden">Generate Plan</span>
+                    </>
+                  ) : (
+                    "Continue"
+                  )}
                 </button>
               </div>
+              </fieldset>
             </form>
           )}
 

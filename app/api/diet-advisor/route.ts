@@ -4,7 +4,7 @@ import { askDietAdvisorAI } from "@/lib/gemini";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { question } = body;
+    const { question, userName } = body;
 
     if (!question || typeof question !== "string" || question.trim().length === 0) {
       return NextResponse.json(
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const advisorResponse = await askDietAdvisorAI(question.trim());
+    const advisorResponse = await askDietAdvisorAI(question.trim(), userName);
 
     return NextResponse.json({
       success: true,

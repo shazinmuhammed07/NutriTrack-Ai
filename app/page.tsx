@@ -80,6 +80,9 @@ export default function Home() {
   const [currentPlan, setCurrentPlan] = useState<IDietPlanData | null>(null);
   const [history, setHistory] = useState<IDietPlanData[]>([]);
   const [activeMealTab, setActiveMealTab] = useState<"breakfast" | "lunch" | "dinner" | "snack">("breakfast");
+  const [welcomeDismissed, setWelcomeDismissed] = useState<boolean>(false);
+  const [hasSavedPlan, setHasSavedPlan] = useState<boolean>(false);
+  const [userName, setUserName] = useState<string>("");
 
   // Interactive sidebar drawer toggle
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
@@ -95,7 +98,7 @@ export default function Home() {
       text: "Hello! I am your Nutrition Intelligence Panel. Ask me anything about foods, ingredients, calories, or diet queries (e.g. *'How much protein is in 100g of almonds?'* or *'Is peanut butter good for losing weight?'*)."
     }
   ]);
-  const [inputQuestion, setInputQuestion] = useState<string>("Is Kerala Matta Rice good for fat loss?");
+  const [inputQuestion, setInputQuestion] = useState<string>("");
   const [chatLoading, setChatLoading] = useState<boolean>(false);
   const [chatError, setChatError] = useState<string | null>(null);
 
@@ -118,7 +121,7 @@ export default function Home() {
       const res = await fetch("/api/diet-advisor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, userName }),
       });
 
       if (!res.ok) {
@@ -216,11 +219,22 @@ export default function Home() {
   useEffect(() => {
     const userId = "default_user";
     
+    // Check if welcome was dismissed in this session
+    const seenWelcome = sessionStorage.getItem("has_seen_welcome") === "true";
+    setWelcomeDismissed(seenWelcome);
+
+    // Load user name
+    const storedName = localStorage.getItem("nutritrack_user_name");
+    if (storedName) {
+      setUserName(storedName);
+    }
+
     // Load active plan scoped to user
     const savedPlan = localStorage.getItem(`nutritrack_current_plan_${userId}`);
     if (savedPlan) {
       try {
         setCurrentPlan(JSON.parse(savedPlan));
+        setHasSavedPlan(true);
       } catch (e) {
         console.error("Error parsing current plan:", e);
       }
@@ -263,6 +277,9 @@ export default function Home() {
     const userId = "default_user";
     setCurrentPlan(plan);
     localStorage.setItem(`nutritrack_current_plan_${userId}`, JSON.stringify(plan));
+    setHasSavedPlan(true);
+    sessionStorage.setItem("has_seen_welcome", "true");
+    setWelcomeDismissed(true);
     setIsHistoryOpen(false); // Close history drawer
   };
 
@@ -276,6 +293,7 @@ export default function Home() {
     const userId = "default_user";
     localStorage.removeItem(`nutritrack_current_plan_${userId}`);
     setCurrentPlan(null);
+    setHasSavedPlan(false);
   };
 
   // BMI needle angle (-90 to 90 degrees)
@@ -425,7 +443,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto flex justify-between items-center w-full">
           
           {/* DB Status */}
-          <div className="flex items-center space-x-2">
+          <div className="hidden sm:flex items-center space-x-2">
             <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold flex items-center gap-1.5 ${isDbConnected ? "bg-[#111111]/5 dark:bg-[#fafafa]/5 border-[#e4e4e7] dark:border-[#27272a] text-[#111111] dark:text-[#fafafa]" : "bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-550"} shadow-sm`}>
               <span className={`h-1.5 w-1.5 rounded-full ${isDbConnected ? "bg-[#111111] dark:bg-white animate-pulse" : "bg-zinc-400"}`}></span>
               {isDbConnected ? "Sync On" : "Local Storage"}
@@ -433,15 +451,15 @@ export default function Home() {
           </div>
 
           {/* Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => router.push("/")}>
-            <div className="bg-[#111111] dark:bg-[#fafafa] text-[#fafafa] dark:text-[#111111] p-3 rounded-2xl font-bold flex items-center justify-center shadow-md relative transition-transform duration-300 group-hover:scale-105">
-              <Sparkles className="h-6 w-6" />
+          <div className="flex items-center space-x-1.5 sm:space-x-3 cursor-pointer group" onClick={() => router.push("/")}>
+            <div className="bg-[#111111] dark:bg-[#fafafa] text-[#fafafa] dark:text-[#111111] p-2 sm:p-3 rounded-xl sm:rounded-2xl font-bold flex items-center justify-center shadow-md relative transition-transform duration-300 group-hover:scale-105">
+              <Sparkles className="h-4 w-4 sm:h-6 sm:w-6" />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl sm:text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-[#111111] to-[#71717a] dark:from-[#fafafa] dark:to-[#a1a1aa]">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-lg sm:text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-[#111111] to-[#71717a] dark:from-[#fafafa] dark:to-[#a1a1aa]">
                 NutriTrack
               </span>
-              <span className="text-[9px] uppercase tracking-widest font-black px-2 py-0.5 rounded-lg border border-[#e4e4e7] dark:border-[#27272a] bg-[#111111] text-[#fafafa] dark:bg-[#fafafa] dark:text-[#111111] shadow-sm">
+              <span className="text-[8px] sm:text-[9px] uppercase tracking-widest font-black px-1.5 py-0.5 rounded border border-[#e4e4e7] dark:border-[#27272a] bg-[#111111] text-[#fafafa] dark:bg-[#fafafa] dark:text-[#111111] shadow-sm">
                 AI
               </span>
             </div>
@@ -451,7 +469,7 @@ export default function Home() {
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setIsHistoryOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#e4e4e7] dark:border-[#27272a] bg-white dark:bg-[#121214] hover:bg-[#fafafa] dark:hover:bg-[#1c1c1f] text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
+              className="flex items-center gap-2 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl border border-[#e4e4e7] dark:border-[#27272a] bg-white dark:bg-[#121214] hover:bg-[#fafafa] dark:hover:bg-[#1c1c1f] text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
             >
               <History className="h-3.5 w-3.5 text-[#71717a] dark:text-[#a1a1aa]" />
               <span className="hidden sm:inline">History ({history.length})</span>
@@ -560,7 +578,7 @@ export default function Home() {
       {/* Main Container */}
       <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 md:p-12 flex flex-col justify-center print-container">
         
-        {currentPlan ? (
+        {currentPlan && welcomeDismissed ? (
           /* Dashboard Layout */
           <div className="space-y-8 animate-fadeIn w-full">
             
@@ -568,7 +586,12 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b border-[#e4e4e7] dark:border-[#27272a] gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-[#71717a]">Nutrition Analytics Portal</span>
-                <h2 className="text-2xl font-black text-[#111111] dark:text-[#fafafa] tracking-tight mt-0.5">Clinical Diet Overview</h2>
+                <h2 className="text-2xl font-black text-[#111111] dark:text-[#fafafa] tracking-tight mt-0.5">
+                  {userName ? `Hello, ${userName} 👋` : "Clinical Diet Overview"}
+                </h2>
+                {userName && (
+                  <p className="text-xs font-bold text-[#71717a] dark:text-[#a1a1aa] mt-0.5">Your Personalized Diet Plan</p>
+                )}
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-xs text-[#71717a] dark:text-[#a1a1aa] font-medium">
                   <span className="capitalize">{currentPlan.gender}</span>
                   <span>•</span>
@@ -933,7 +956,7 @@ export default function Home() {
                                 onClick={() => setCheckedIngredients(prev => ({ ...prev, [ing]: !isChecked }))}
                                 className="w-full flex items-start gap-2 text-left text-xs text-[#71717a] dark:text-[#a1a1aa] hover:text-[#111111] dark:hover:text-white transition-all cursor-pointer group"
                               >
-                                <div className={`h-4.5 w-4.5 rounded-md border flex items-center justify-center flex-shrink-0 transition-all ${
+                                <div className={`h-5 w-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-all ${
                                   isChecked 
                                     ? "bg-[#111111] dark:bg-[#fafafa] border-[#111111] dark:border-[#fafafa] text-white dark:text-black" 
                                     : "border-[#e4e4e7] dark:border-[#27272a] group-hover:border-black dark:group-hover:border-white"
@@ -984,8 +1007,8 @@ export default function Home() {
                   </div>
                 </div>
                 
-                {/* Suggestions badges */}
-                <div className="flex flex-wrap gap-1.5 text-[9px] font-bold">
+                 {/* Suggestions badges */}
+                <div className="flex flex-row overflow-x-auto pb-1 scrollbar-none whitespace-nowrap w-full gap-1.5 text-[9px] font-bold no-print">
                   {[
                     "Is Kerala Matta Rice good for fat loss?",
                     "What is the protein content of 100g Paneer?",
@@ -995,7 +1018,7 @@ export default function Home() {
                       key={i}
                       type="button"
                       onClick={() => handleSendQuestion(undefined, sPrompt)}
-                      className="bg-[#fafafa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#71717a] hover:border-[#111111] hover:text-[#111111] dark:hover:border-white dark:hover:text-white rounded-full px-2.5 py-1.5 cursor-pointer transition-all"
+                      className="bg-[#fafafa] dark:bg-[#09090b] border border-[#e4e4e7] dark:border-[#27272a] text-[#71717a] hover:border-[#111111] hover:text-[#111111] dark:hover:border-white dark:hover:text-white rounded-full px-2.5 py-1.5 cursor-pointer transition-all flex-shrink-0"
                     >
                       {sPrompt}
                     </button>
@@ -1109,17 +1132,17 @@ export default function Home() {
           </div>
         ) : (
           /* Landing Page / Welcome Hero */
-          <div className="bg-white dark:bg-[#121214] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl p-8 md:p-12 shadow-xl flex flex-col md:flex-row items-center justify-between gap-10 w-full max-w-4xl mx-auto my-6 relative overflow-hidden transition-all duration-300">
+          <div className="bg-white dark:bg-[#121214] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl p-5 sm:p-8 md:p-12 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-10 w-full max-w-4xl mx-auto my-4 sm:my-6 relative overflow-hidden transition-all duration-300">
             <div className="absolute top-0 left-0 right-0 h-1 bg-[#111111] dark:bg-[#fafafa]"></div>
 
-            <div className="flex-1 space-y-6 text-left">
+            <div className="flex-1 space-y-6 text-left w-full">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111111]/5 dark:bg-[#fafafa]/5 border border-[#e4e4e7] dark:border-[#27272a] text-[#111111] dark:text-white text-[9px] font-black uppercase tracking-wider">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#111111] dark:bg-white animate-pulse"></span>
                 Nutrition Intelligence Platform
               </div>
 
               <div className="space-y-4">
-                <h2 className="text-3xl md:text-5xl font-black text-[#111111] dark:text-white tracking-tight leading-none">
+                <h2 className="text-3xl md:text-5xl font-black text-[#111111] dark:text-white tracking-tight leading-tight">
                   Redefining <br />
                   Metabolic Health.
                 </h2>
@@ -1128,17 +1151,32 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-start">
                 <button
-                  onClick={() => router.push("/calculate")}
-                  className="bg-[#111111] hover:bg-black dark:bg-[#fafafa] dark:hover:bg-white text-white dark:text-black font-black px-8 py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-xs uppercase tracking-widest cursor-pointer flex items-center gap-2"
+                  onClick={() => {
+                    sessionStorage.setItem("has_seen_welcome", "true");
+                    router.push("/calculate");
+                  }}
+                  className="bg-[#111111] hover:bg-black dark:bg-[#fafafa] dark:hover:bg-white text-white dark:text-black font-black px-6 py-3.5 rounded-2xl shadow-lg transition-all active:scale-95 text-[10px] sm:text-xs uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2 w-full sm:w-auto"
                 >
                   Configure Metabolic Profile
                   <ArrowRight className="h-4 w-4" />
                 </button>
+                {hasSavedPlan && (
+                  <button
+                    onClick={() => {
+                      sessionStorage.setItem("has_seen_welcome", "true");
+                      setWelcomeDismissed(true);
+                    }}
+                    className="bg-white hover:bg-[#fafafa] dark:bg-[#121214] dark:hover:bg-[#1c1c1f] border border-[#e4e4e7] dark:border-[#27272a] text-[#111111] dark:text-white font-black px-6 py-3.5 rounded-2xl shadow-lg transition-all active:scale-95 text-[10px] sm:text-xs uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2 w-full sm:w-auto"
+                  >
+                    View Current Diet Plan
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                )}
               </div>
 
-              <div className="grid grid-cols-3 gap-4 pt-8 border-t border-[#e4e4e7] dark:border-[#27272a] text-[10px] text-[#71717a] font-medium">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-[#e4e4e7] dark:border-[#27272a] text-[10px] text-[#71717a] font-medium">
                 <div>
                   <span className="font-bold text-[#111111] dark:text-[#fafafa] block">01. Mifflin Math</span>
                   <span>Basal metabolic baseline</span>
@@ -1155,10 +1193,10 @@ export default function Home() {
             </div>
 
             {/* Concentric Progress Ring Illustration */}
-            <div className="flex-1 flex justify-center items-center relative py-6">
-              <div className="absolute h-56 w-56 bg-zinc-150 dark:bg-zinc-900 rounded-full filter blur-3xl opacity-40"></div>
+            <div className="flex-shrink-0 flex justify-center items-center relative py-6 w-full md:w-auto">
+              <div className="absolute h-48 w-48 sm:h-56 sm:w-56 bg-zinc-150 dark:bg-zinc-900 rounded-full filter blur-3xl opacity-40"></div>
               
-              <svg className="w-full max-w-[280px] h-auto object-contain relative z-10 animate-float" viewBox="0 0 120 120">
+              <svg className="w-full max-w-[200px] sm:max-w-[280px] h-auto object-contain relative z-10 animate-float" viewBox="0 0 120 120">
                 {/* Outermost ring */}
                 <circle cx="60" cy="60" r="50" fill="none" stroke="#e4e4e7" strokeWidth="5" className="dark:stroke-zinc-800" />
                 <circle cx="60" cy="60" r="50" fill="none" stroke="#111111" strokeWidth="5" className="dark:stroke-white"
