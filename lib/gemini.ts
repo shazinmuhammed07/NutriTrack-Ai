@@ -368,7 +368,7 @@ function generateLocalPlan(
   // Determine if veg or non-veg fallback is needed
   const isVeg = ["vegetarian", "vegan", "eggetarian"].includes(dietType.toLowerCase());
   const vegKey = isVeg ? "Veg" : "NonVeg";
-  
+
   // Clean cuisine key matching our map
   let cuisineKey = "MixedIndian";
   const normCuisine = cuisine.toLowerCase().replace(/[\s-]/g, "");
