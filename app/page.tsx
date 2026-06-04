@@ -468,7 +468,7 @@ export default function Home() {
           <div className="flex items-center space-x-2">
             <Info className="h-4 w-4 flex-shrink-0" />
             <span>
-              <strong>Offline Recommendation Mode:</strong> {!isDbConnected && "Mongoose connection string offline."} Configured local intelligence recommendations are active for Kerala / Indian traditional meals. Configure a <code className="bg-zinc-800 dark:bg-zinc-200 text-white dark:text-black px-1 rounded">GEMINI_API_KEY</code> for dynamic cloud execution.
+              <strong>Offline Recommendation Mode:</strong> {!isDbConnected && "Supabase connection string offline."} Configured local intelligence recommendations are active for Kerala / Indian traditional meals. Configure a <code className="bg-zinc-800 dark:bg-zinc-200 text-white dark:text-black px-1 rounded">GEMINI_API_KEY</code> for dynamic cloud execution.
             </span>
           </div>
           <button onClick={() => setShowDemoBanner(false)} className="opacity-70 hover:opacity-100 ml-4 font-bold">✕</button>

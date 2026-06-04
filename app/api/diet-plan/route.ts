@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db";
-import DietPlan from "@/models/DietPlan";
+import { supabase } from "@/lib/db";
 import { generateDietPlanAI } from "@/lib/gemini";
 
 export async function POST(request: Request) {
@@ -124,33 +123,38 @@ export async function POST(request: Request) {
     let saveStatus = "local_only";
     let savedDocumentId = null;
 
-    try {
-      const db = await connectToDatabase();
-      if (db) {
-        const dietPlanDoc = new DietPlan({
-          userId,
-          age: ageNum,
-          gender,
-          height: heightNum,
-          weight: weightNum,
-          activityLevel,
-          goal,
-          budget,
-          bmi,
-          maintenanceCalories,
-          targetCalories,
-          mealPlan: plan,
-          cuisine: cuisineStr,
-          dietType: dietTypeStr,
-          goalTimeline: goalTimelineStr,
-        });
-        const saved = await dietPlanDoc.save();
+    if (supabase) {
+      try {
+        const { data: saved, error } = await supabase
+          .from("diet_plans")
+          .insert([{
+            user_id: userId,
+            age: ageNum,
+            gender,
+            height: heightNum,
+            weight: weightNum,
+            activity_level: activityLevel,
+            goal,
+            budget,
+            bmi,
+            maintenance_calories: maintenanceCalories,
+            target_calories: targetCalories,
+            cuisine: cuisineStr,
+            diet_type: dietTypeStr,
+            goal_timeline: goalTimelineStr,
+            meal_plan: plan
+          }])
+          .select("id")
+          .single();
+
+        if (error) throw error;
+
         saveStatus = "saved_to_db";
-        savedDocumentId = saved._id;
+        savedDocumentId = saved?.id || null;
+      } catch (dbError) {
+        console.error("Failed to save diet plan to Supabase:", dbError);
+        saveStatus = "db_save_failed";
       }
-    } catch (dbError) {
-      console.error("Failed to save diet plan to MongoDB Atlas:", dbError);
-      saveStatus = "db_save_failed";
     }
 
     return NextResponse.json({
