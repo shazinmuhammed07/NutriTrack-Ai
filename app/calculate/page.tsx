@@ -72,7 +72,6 @@ export default function CalculatePage() {
   const [error, setError] = useState<string | null>(null);
   const [loadingText, setLoadingText] = useState<string>("Analyzing metabolic profile...");
   const [userName, setUserName] = useState<string>("");
-  const [isNameStored, setIsNameStored] = useState<boolean>(false);
 
   // Validation states
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -80,7 +79,7 @@ export default function CalculatePage() {
   const validateStep = (step: number): boolean => {
     const errors: Record<string, string> = {};
     if (step === 1) {
-      if (!isNameStored && !userName.trim()) {
+      if (!userName.trim()) {
         errors.userName = "Please enter your name.";
       }
       const ageNum = Number(age);
@@ -117,7 +116,6 @@ export default function CalculatePage() {
     const storedName = localStorage.getItem("nutritrack_user_name");
     if (storedName) {
       setUserName(storedName);
-      setIsNameStored(true);
     }
   }, []);
 
@@ -205,9 +203,8 @@ export default function CalculatePage() {
         const userId = "default_user";
         
         // Save user name to localStorage
-        if (!isNameStored && userName.trim()) {
+        if (userName.trim()) {
           localStorage.setItem("nutritrack_user_name", userName.trim());
-          setIsNameStored(true);
         }
 
         // Save current active plan to localStorage scoped to user
@@ -363,24 +360,22 @@ export default function CalculatePage() {
                     <h3 className="text-sm font-bold uppercase tracking-wider text-[#71717a]">1. Personal Metrics</h3>
                   </div>
 
-                  {!isNameStored && (
-                    <div className="space-y-2">
-                      <label className="block text-xs font-bold text-[#71717a] mb-1.5 uppercase tracking-wider">What should we call you?</label>
-                      <input
-                        type="text"
-                        required
-                        value={userName}
-                        onChange={(e) => setUserName(e.target.value)}
-                        className={`w-full bg-[#fafafa] dark:bg-[#09090b] border ${validationErrors.userName ? "border-rose-500" : "border-[#e4e4e7] dark:border-[#27272a]"} focus:border-[#111111] dark:focus:border-[#fafafa] rounded-xl px-4 py-3 text-sm text-[#111111] dark:text-[#fafafa] focus:outline-none transition-all`}
-                        placeholder="Enter your name (e.g. Shazin)"
-                      />
-                      {validationErrors.userName && (
-                        <p className="text-[10px] text-rose-500 mt-1 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" /> {validationErrors.userName}
-                        </p>
-                      )}
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[#71717a] mb-1.5 uppercase tracking-wider">What should we call you?</label>
+                    <input
+                      type="text"
+                      required
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                      className={`w-full bg-[#fafafa] dark:bg-[#09090b] border ${validationErrors.userName ? "border-rose-500" : "border-[#e4e4e7] dark:border-[#27272a]"} focus:border-[#111111] dark:focus:border-[#fafafa] rounded-xl px-4 py-3 text-sm text-[#111111] dark:text-[#fafafa] focus:outline-none transition-all`}
+                      placeholder="Enter your name (e.g. Shazin)"
+                    />
+                    {validationErrors.userName && (
+                      <p className="text-[10px] text-rose-500 mt-1 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" /> {validationErrors.userName}
+                      </p>
+                    )}
+                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
