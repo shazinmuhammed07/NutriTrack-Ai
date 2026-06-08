@@ -670,7 +670,7 @@ export default function FoodAnalyzer({ profile, onProfileRedirect }: FoodAnalyze
                     onClick={triggerFileInput}
                     className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 min-h-[160px] ${dragActive
                       ? "border-black dark:border-white bg-black/5 dark:bg-white/5 scale-[1.01]"
-                      : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-650 bg-[#fafafa] dark:bg-[#09090b]"
+                      : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 bg-[#fafafa] dark:bg-[#09090b]"
                       }`}
                   >
                     <input
