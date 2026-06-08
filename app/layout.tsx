@@ -15,6 +15,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "NutriTrack AI — Premium Precision Diet Planner",
   description: "An award-winning precision health-tech platform for Basal Metabolic Rate calculations, Body Mass Index tracking, and custom AI-formulated nutrition plans.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" }
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" }
+    ]
+  }
 };
 
 export default function RootLayout({
