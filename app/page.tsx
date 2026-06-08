@@ -292,6 +292,8 @@ export default function Home() {
   const handleStartOver = () => {
     const userId = "default_user";
     localStorage.removeItem(`nutritrack_current_plan_${userId}`);
+    localStorage.removeItem("nutritrack_user_name");
+    setUserName("");
     setCurrentPlan(null);
     setHasSavedPlan(false);
   };
