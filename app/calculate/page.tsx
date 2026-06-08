@@ -113,9 +113,16 @@ export default function CalculatePage() {
 
   // Check if name is already stored in local storage
   useEffect(() => {
-    const storedName = localStorage.getItem("nutritrack_user_name");
-    if (storedName) {
-      setUserName(storedName);
+    const params = new URLSearchParams(window.location.search);
+    const isNew = params.get("mode") === "new";
+    if (isNew) {
+      localStorage.removeItem("nutritrack_user_name");
+      setUserName("");
+    } else {
+      const storedName = localStorage.getItem("nutritrack_user_name");
+      if (storedName) {
+        setUserName(storedName);
+      }
     }
   }, []);
 

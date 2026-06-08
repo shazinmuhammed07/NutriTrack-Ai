@@ -159,7 +159,7 @@ export default function Home() {
         isBullet = true;
         content = line.trim().substring(2);
       }
-      
+
       if (typeof content === "string") {
         const parts = content.split(/\*\*([^*]+)\*\*/g);
         if (parts.length > 1) {
@@ -169,7 +169,7 @@ export default function Home() {
           });
         }
       }
-      
+
       if (typeof content === "string") {
         const parts = content.split(/\*([^*]+)\*/g);
         if (parts.length > 1) {
@@ -218,7 +218,7 @@ export default function Home() {
   // Load active plan and history on mount
   useEffect(() => {
     const userId = "default_user";
-    
+
     // Check if welcome was dismissed in this session
     const seenWelcome = sessionStorage.getItem("has_seen_welcome") === "true";
     setWelcomeDismissed(seenWelcome);
@@ -239,7 +239,7 @@ export default function Home() {
         console.error("Error parsing current plan:", e);
       }
     }
-    
+
     // Load history
     loadHistory(userId);
   }, []);
@@ -332,7 +332,7 @@ export default function Home() {
   // Health Score Calculation
   const getHealthScore = (plan: IDietPlanData) => {
     let score = 75; // Baseline
-    
+
     // BMI check
     if (plan.bmi >= 18.5 && plan.bmi < 25) {
       score += 15;
@@ -341,7 +341,7 @@ export default function Home() {
     } else {
       score -= 5;
     }
-    
+
     // Protein content check (optimizing for 20-30% calories)
     const pCal = plan.mealPlan.totalProtein * 4;
     const totalCal = pCal + (plan.mealPlan.totalCarbs * 4) + (plan.mealPlan.totalFats * 9);
@@ -351,7 +351,7 @@ export default function Home() {
         score += 10;
       }
     }
-    
+
     return Math.min(100, Math.max(45, score));
   };
 
@@ -359,7 +359,7 @@ export default function Home() {
   const getWeightProjection = (plan: IDietPlanData) => {
     const diff = plan.targetCalories - plan.maintenanceCalories;
     const weeklyRate = diff / 1100; // 7700 kcal per kg of fat
-    
+
     const projection = [];
     for (let w = 0; w <= 12; w += 2) {
       const projected = plan.weight + (weeklyRate * w);
@@ -379,7 +379,7 @@ export default function Home() {
       { original: "Whole Chicken / Dairy Cream", swap: "Low-Fat Paneer or Organic Tofu", reason: "Saves 150 kcal of saturated fats, preserves lean protein." },
       { original: "Sugar / Honey Drizzle", swap: "Stevia Extract or Pure Apple Mash", reason: "Zeroes out glycemic spikes while maintaining sweetness." }
     ];
-    
+
     const isKerala = cuisine.toLowerCase().includes("kerala") || cuisine.toLowerCase().includes("south");
     if (isKerala) {
       return [
@@ -439,11 +439,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#09090b] text-[#111111] dark:text-[#fafafa] flex flex-col font-sans selection:bg-[#111111] selection:text-white dark:selection:bg-white dark:selection:text-black relative transition-colors duration-300">
-      
+
       {/* Top Header */}
       <header className="border-b border-[#e4e4e7] dark:border-[#27272a] bg-white/70 dark:bg-[#121214]/70 backdrop-blur-md sticky top-0 z-40 px-6 py-4 shadow-sm no-print">
         <div className="max-w-5xl mx-auto flex justify-between items-center w-full">
-          
+
           {/* DB Status */}
           <div className="hidden sm:flex items-center space-x-2">
             <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold flex items-center gap-1.5 ${isDbConnected ? "bg-[#111111]/5 dark:bg-[#fafafa]/5 border-[#e4e4e7] dark:border-[#27272a] text-[#111111] dark:text-[#fafafa]" : "bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-550"} shadow-sm`}>
@@ -498,7 +498,7 @@ export default function Home() {
       {/* History Drawer */}
       <div className={`fixed inset-0 z-50 transition-opacity duration-300 no-print ${isHistoryOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}>
         <div className="absolute inset-0 bg-[#09090b]/40 backdrop-blur-sm" onClick={() => setIsHistoryOpen(false)}></div>
-        
+
         <div className={`absolute top-0 right-0 h-full w-full max-w-sm bg-white dark:bg-[#121214] border-l border-[#e4e4e7] dark:border-[#27272a] p-6 flex flex-col justify-between shadow-2xl transition-transform duration-300 transform ${isHistoryOpen ? "translate-x-0" : "translate-x-full"}`}>
           <div>
             <div className="flex items-center justify-between pb-4 border-b border-[#e4e4e7] dark:border-[#27272a] mb-6">
@@ -528,11 +528,10 @@ export default function Home() {
                     <button
                       key={key}
                       onClick={() => handleSelectHistory(hPlan)}
-                      className={`w-full text-left p-4 rounded-2xl border transition-all flex justify-between items-center ${
-                        isSelected
-                          ? "bg-[#111111] border-[#111111] text-[#fafafa] dark:bg-[#fafafa] dark:border-[#fafafa] dark:text-[#111111] shadow-md"
-                          : "bg-[#fafafa] dark:bg-[#09090b] border-[#e4e4e7] dark:border-[#27272a] text-[#71717a] hover:border-[#111111] dark:hover:border-[#fafafa]"
-                      }`}
+                      className={`w-full text-left p-4 rounded-2xl border transition-all flex justify-between items-center ${isSelected
+                        ? "bg-[#111111] border-[#111111] text-[#fafafa] dark:bg-[#fafafa] dark:border-[#fafafa] dark:text-[#111111] shadow-md"
+                        : "bg-[#fafafa] dark:bg-[#09090b] border-[#e4e4e7] dark:border-[#27272a] text-[#71717a] hover:border-[#111111] dark:hover:border-[#fafafa]"
+                        }`}
                     >
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
@@ -579,11 +578,11 @@ export default function Home() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 md:p-12 flex flex-col justify-center print-container">
-        
+
         {currentPlan && welcomeDismissed ? (
           /* Dashboard Layout */
           <div className="space-y-8 animate-fadeIn w-full">
-            
+
             {/* Dashboard Subheader */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b border-[#e4e4e7] dark:border-[#27272a] gap-4">
               <div>
@@ -612,7 +611,7 @@ export default function Home() {
                   <span>{currentPlan.goalTimeline || "3 Months"}</span>
                 </div>
               </div>
-              
+
               <div className="flex gap-2 w-full sm:w-auto no-print actions-row">
                 <button
                   onClick={() => router.push("/calculate")}
@@ -632,7 +631,7 @@ export default function Home() {
 
             {/* Visual Stats Row */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              
+
               {/* BMI Gauge */}
               <div className="bg-white dark:bg-[#121214] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                 <div>
@@ -654,7 +653,7 @@ export default function Home() {
                     <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#e4e4e7" strokeWidth="8" className="dark:stroke-zinc-800" strokeLinecap="round" />
                     {/* Highlight normal weight range */}
                     <path d="M 29.5 21.5 A 40 40 0 0 1 70.5 21.5" fill="none" stroke="#111111" strokeWidth="8" className="dark:stroke-white" strokeLinecap="round" />
-                    
+
                     {/* Rotating needle */}
                     <line x1="50" y1="50" x2="50" y2="15" stroke="#111111" className="dark:stroke-white gauge-needle" strokeWidth="3" strokeLinecap="round"
                       style={{ transform: `rotate(${getBmiNeedleRotation(currentPlan.bmi)}deg)` }} />
@@ -674,7 +673,7 @@ export default function Home() {
                     {currentPlan.targetCalories}
                     <span className="text-[10px] font-normal text-[#71717a] ml-1">kcal/d</span>
                   </div>
-                  
+
                   <div className="text-[9px] text-[#71717a] mt-2 font-mono">
                     {currentPlan.targetCalories < currentPlan.maintenanceCalories ? (
                       <span className="font-bold flex items-center gap-1"><TrendingDown className="h-3 w-3" /> Deficit of {currentPlan.maintenanceCalories - currentPlan.targetCalories} kcal</span>
@@ -757,16 +756,16 @@ export default function Home() {
 
             {/* Secondary Row: Meal Plan & Projection */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              
+
               {/* Left Column: Macro split & Weight Projection */}
               <div className="space-y-6 lg:col-span-1">
-                
+
                 {/* Target Macros Split Card */}
                 <div className="bg-white dark:bg-[#121214] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl p-6 shadow-sm">
                   <h4 className="text-[10px] font-black text-[#111111] dark:text-[#fafafa] uppercase tracking-wider mb-4 flex items-center gap-1.5">
                     <Utensils className="h-3.5 w-3.5 text-[#71717a]" /> Target Macros Allocation
                   </h4>
-                  
+
                   {macrosPercent && (
                     <div className="space-y-4">
                       <div>
@@ -807,7 +806,7 @@ export default function Home() {
                   <h4 className="text-[10px] font-black text-[#111111] dark:text-[#fafafa] uppercase tracking-wider mb-4 flex items-center gap-1.5">
                     <Calendar className="h-3.5 w-3.5 text-[#71717a]" /> Weekly weight projection
                   </h4>
-                  
+
                   <div className="flex sm:grid sm:grid-cols-7 gap-2 overflow-x-auto pb-2 sm:pb-0 font-mono scrollbar-none">
                     {weightProj.map((proj, idx) => (
                       <div key={idx} className="flex flex-col items-center flex-1 min-w-[52px] sm:min-w-0">
@@ -829,9 +828,9 @@ export default function Home() {
 
               {/* Right Column: Dynamic Tabbed Meal Planner */}
               <div className="space-y-6 lg:col-span-2">
-                
+
                 <div className="bg-white dark:bg-[#121214] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl p-6 shadow-md flex flex-col justify-between">
-                  
+
                   <div>
                     {/* Meal Tabs Selection */}
                     <div className="grid grid-cols-4 gap-2 mb-6">
@@ -844,11 +843,10 @@ export default function Home() {
                         <button
                           key={t.id}
                           onClick={() => setActiveMealTab(t.id as any)}
-                          className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 px-2 py-3 rounded-2xl border text-[10px] font-bold transition-all cursor-pointer ${
-                            activeMealTab === t.id
-                              ? "bg-[#111111] border-[#111111] text-[#fafafa] dark:bg-[#fafafa] dark:border-[#fafafa] dark:text-[#111111] shadow-sm"
-                              : "bg-[#fafafa] dark:bg-[#09090b] border-[#e4e4e7] dark:border-[#27272a] text-[#71717a] hover:border-[#a1a1aa]"
-                          }`}
+                          className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 px-2 py-3 rounded-2xl border text-[10px] font-bold transition-all cursor-pointer ${activeMealTab === t.id
+                            ? "bg-[#111111] border-[#111111] text-[#fafafa] dark:bg-[#fafafa] dark:border-[#fafafa] dark:text-[#111111] shadow-sm"
+                            : "bg-[#fafafa] dark:bg-[#09090b] border-[#e4e4e7] dark:border-[#27272a] text-[#71717a] hover:border-[#a1a1aa]"
+                            }`}
                         >
                           <t.icon className="h-3.5 w-3.5" />
                           <span className="hidden sm:inline">{t.label.split(" ")[1]}</span>
@@ -958,11 +956,10 @@ export default function Home() {
                                 onClick={() => setCheckedIngredients(prev => ({ ...prev, [ing]: !isChecked }))}
                                 className="w-full flex items-start gap-2 text-left text-xs text-[#71717a] dark:text-[#a1a1aa] hover:text-[#111111] dark:hover:text-white transition-all cursor-pointer group"
                               >
-                                <div className={`h-5 w-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-all ${
-                                  isChecked 
-                                    ? "bg-[#111111] dark:bg-[#fafafa] border-[#111111] dark:border-[#fafafa] text-white dark:text-black" 
-                                    : "border-[#e4e4e7] dark:border-[#27272a] group-hover:border-black dark:group-hover:border-white"
-                                }`}>
+                                <div className={`h-5 w-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-all ${isChecked
+                                  ? "bg-[#111111] dark:bg-[#fafafa] border-[#111111] dark:border-[#fafafa] text-white dark:text-black"
+                                  : "border-[#e4e4e7] dark:border-[#27272a] group-hover:border-black dark:group-hover:border-white"
+                                  }`}>
                                   {isChecked && <Check className="h-3.5 w-3.5 stroke-[3]" />}
                                 </div>
                                 <span className={`${isChecked ? "line-through opacity-50" : ""}`}>{ing}</span>
@@ -1008,15 +1005,15 @@ export default function Home() {
                     <p className="text-[10px] text-[#71717a] mt-1">Metabolic assistant. Input any dietary queries to query calorie counts or local food benefits.</p>
                   </div>
                 </div>
-                
-                 {/* Suggestions badges */}
+
+                {/* Suggestions badges */}
                 <div className="flex flex-row overflow-x-auto pb-1 scrollbar-none whitespace-nowrap w-full gap-1.5 text-[9px] font-bold no-print">
                   {[
                     "Is Kerala Matta Rice good for fat loss?",
                     "What is the protein content of 100g Paneer?",
                     "Puttu & Kadala curry calories?"
                   ].map((sPrompt, i) => (
-                    <button 
+                    <button
                       key={i}
                       type="button"
                       onClick={() => handleSendQuestion(undefined, sPrompt)}
@@ -1033,19 +1030,18 @@ export default function Home() {
                 {chatMessages.map((msg) => {
                   const isAi = msg.sender === "ai";
                   return (
-                    <div 
-                      key={msg.id} 
+                    <div
+                      key={msg.id}
                       className={`flex flex-col gap-1 w-full max-w-[85%] ${isAi ? "mr-auto items-start font-sans" : "ml-auto items-end font-sans"}`}
                     >
                       <span className="text-[8px] text-[#71717a] uppercase font-bold px-1">
                         {isAi ? "⚡ Intelligence Diagnostics" : "👤 User Client"}
                       </span>
-                      <div 
-                        className={`rounded-2xl px-4 py-3 text-xs leading-relaxed ${
-                          isAi 
-                            ? "bg-white dark:bg-[#121214] border border-[#e4e4e7] dark:border-[#27272a] text-[#111111] dark:text-[#fafafa] rounded-tl-none" 
-                            : "bg-[#111111] dark:bg-white text-white dark:text-black rounded-tr-none font-medium"
-                        }`}
+                      <div
+                        className={`rounded-2xl px-4 py-3 text-xs leading-relaxed ${isAi
+                          ? "bg-white dark:bg-[#121214] border border-[#e4e4e7] dark:border-[#27272a] text-[#111111] dark:text-[#fafafa] rounded-tl-none"
+                          : "bg-[#111111] dark:bg-white text-white dark:text-black rounded-tr-none font-medium"
+                          }`}
                       >
                         {isAi ? formatMessageText(msg.text) : <p>{msg.text}</p>}
 
@@ -1157,7 +1153,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     sessionStorage.setItem("has_seen_welcome", "true");
-                    router.push("/calculate");
+                    router.push("/calculate?mode=new");
                   }}
                   className="bg-[#111111] hover:bg-black dark:bg-[#fafafa] dark:hover:bg-white text-white dark:text-black font-black px-6 py-3.5 rounded-2xl shadow-lg transition-all active:scale-95 text-[10px] sm:text-xs uppercase tracking-widest cursor-pointer flex items-center justify-center gap-2 w-full sm:w-auto"
                 >
@@ -1197,23 +1193,23 @@ export default function Home() {
             {/* Concentric Progress Ring Illustration */}
             <div className="flex-shrink-0 flex justify-center items-center relative py-6 w-full md:w-auto">
               <div className="absolute h-48 w-48 sm:h-56 sm:w-56 bg-zinc-150 dark:bg-zinc-900 rounded-full filter blur-3xl opacity-40"></div>
-              
+
               <svg className="w-full max-w-[200px] sm:max-w-[280px] h-auto object-contain relative z-10 animate-float" viewBox="0 0 120 120">
                 {/* Outermost ring */}
                 <circle cx="60" cy="60" r="50" fill="none" stroke="#e4e4e7" strokeWidth="5" className="dark:stroke-zinc-800" />
                 <circle cx="60" cy="60" r="50" fill="none" stroke="#111111" strokeWidth="5" className="dark:stroke-white"
                   strokeDasharray="314" strokeDashoffset="80" strokeLinecap="round" />
-                
+
                 {/* Middle ring */}
                 <circle cx="60" cy="60" r="40" fill="none" stroke="#e4e4e7" strokeWidth="5" className="dark:stroke-zinc-800" />
                 <circle cx="60" cy="60" r="40" fill="none" stroke="#71717a" strokeWidth="5" className="dark:stroke-zinc-500"
                   strokeDasharray="251" strokeDashoffset="100" strokeLinecap="round" />
-                
+
                 {/* Innermost ring */}
                 <circle cx="60" cy="60" r="30" fill="none" stroke="#e4e4e7" strokeWidth="5" className="dark:stroke-zinc-800" />
                 <circle cx="60" cy="60" r="30" fill="none" stroke="#a1a1aa" strokeWidth="5" className="dark:stroke-zinc-400"
                   strokeDasharray="188" strokeDashoffset="120" strokeLinecap="round" />
-                
+
                 {/* Sparkle Icon in Center */}
                 <path d="M 60 48 L 63 57 L 72 60 L 63 63 L 60 72 L 57 63 L 48 60 L 57 57 Z" fill="#111111" className="dark:fill-white animate-pulse" />
               </svg>
