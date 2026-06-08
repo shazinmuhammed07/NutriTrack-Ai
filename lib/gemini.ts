@@ -773,3 +773,526 @@ export async function askDietAdvisorAI(question: string, userName?: string): Pro
     };
   }
 }
+
+// -------------------------------------------------------------
+// Food Analyzer AI Interfaces & Helpers
+// -------------------------------------------------------------
+
+export interface IUserProfile {
+  age: number;
+  gender: string;
+  height: number;
+  weight: number;
+  activityLevel: string;
+  goal: string;
+  dietType?: string;
+  budget?: string;
+  cuisine?: string;
+}
+
+export interface IFoodAnalysis {
+  foodName: string;
+  servingSize: string;
+  calories: number;
+  protein: number;
+  carbohydrates: number;
+  fat: number;
+  fiber: number;
+  healthScore: number;
+  recommendation: "Excellent Choice" | "Good Choice" | "Occasional Choice" | "Avoid Frequently";
+  personalizedRecommendation: string;
+  confidenceScore?: number;
+}
+
+// Extended Local Food Database for exact match lookup and offline fallback
+export const OFFLINE_FOOD_DATABASE: Record<
+  string,
+  {
+    foodName: string;
+    servingSize: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+    fiber: number;
+    healthScore: number;
+    recommendation: "Excellent Choice" | "Good Choice" | "Occasional Choice" | "Avoid Frequently";
+    confidenceScore: number;
+  }
+> = {
+  paneer: {
+    foodName: "Indian Paneer (Cottage Cheese)",
+    servingSize: "100g",
+    calories: 265, protein: 18, carbs: 3.2, fats: 20, fiber: 0,
+    healthScore: 70, recommendation: "Good Choice", confidenceScore: 100
+  },
+  mattarice: {
+    foodName: "Kerala Matta Rice (Cooked)",
+    servingSize: "150g",
+    calories: 195, protein: 4.5, carbs: 41, fats: 0.8, fiber: 4.5,
+    healthScore: 85, recommendation: "Excellent Choice", confidenceScore: 100
+  },
+  puttu: {
+    foodName: "Kerala Puttu (Rice & Coconut)",
+    servingSize: "1 piece (100g)",
+    calories: 230, protein: 4.2, carbs: 46, fats: 3.5, fiber: 3.2,
+    healthScore: 72, recommendation: "Good Choice", confidenceScore: 100
+  },
+  kadala: {
+    foodName: "Kerala Kadala Curry (Black Chickpeas)",
+    servingSize: "1 cup (150g)",
+    calories: 220, protein: 11, carbs: 32, fats: 5, fiber: 7.5,
+    healthScore: 82, recommendation: "Excellent Choice", confidenceScore: 100
+  },
+  egg: {
+    foodName: "Whole Egg (Large)",
+    servingSize: "1 large (50g)",
+    calories: 72, protein: 6.3, carbs: 0.4, fats: 4.8, fiber: 0,
+    healthScore: 80, recommendation: "Good Choice", confidenceScore: 100
+  },
+  eggs: {
+    foodName: "Whole Eggs (Large)",
+    servingSize: "2 large eggs (100g)",
+    calories: 144, protein: 12.6, carbs: 0.8, fats: 9.6, fiber: 0,
+    healthScore: 80, recommendation: "Good Choice", confidenceScore: 100
+  },
+  chicken: {
+    foodName: "Chicken Breast (Cooked, Skinless)",
+    servingSize: "100g",
+    calories: 165, protein: 31, carbs: 0, fats: 3.6, fiber: 0,
+    healthScore: 90, recommendation: "Excellent Choice", confidenceScore: 100
+  },
+  almond: {
+    foodName: "Almonds (Raw)",
+    servingSize: "100g",
+    calories: 579, protein: 21, carbs: 22, fats: 49, fiber: 12,
+    healthScore: 88, recommendation: "Good Choice", confidenceScore: 100
+  },
+  almonds: {
+    foodName: "Almonds (Raw)",
+    servingSize: "30g (approx. 23 nuts)",
+    calories: 174, protein: 6.3, carbs: 6.6, fats: 14.7, fiber: 3.6,
+    healthScore: 88, recommendation: "Good Choice", confidenceScore: 100
+  },
+  salmon: {
+    foodName: "Salmon Fillet (Baked)",
+    servingSize: "100g",
+    calories: 206, protein: 22, carbs: 0, fats: 12, fiber: 0,
+    healthScore: 92, recommendation: "Excellent Choice", confidenceScore: 100
+  },
+  peanutbutter: {
+    foodName: "Creamy Peanut Butter",
+    servingSize: "1 tbsp (16g)",
+    calories: 94, protein: 4, carbs: 3, fats: 8, fiber: 1,
+    healthScore: 70, recommendation: "Good Choice", confidenceScore: 100
+  },
+  rice: {
+    foodName: "Brown Rice (Cooked)",
+    servingSize: "100g",
+    calories: 111, protein: 2.6, carbs: 23, fats: 0.9, fiber: 1.8,
+    healthScore: 80, recommendation: "Good Choice", confidenceScore: 100
+  },
+  oats: {
+    foodName: "Rolled Oats (Dry)",
+    servingSize: "100g",
+    calories: 389, protein: 16.9, carbs: 66, fats: 6.9, fiber: 10.6,
+    healthScore: 90, recommendation: "Excellent Choice", confidenceScore: 100
+  },
+  milk: {
+    foodName: "Whole Milk (3.25% Fat)",
+    servingSize: "1 cup (244ml)",
+    calories: 149, protein: 8, carbs: 12, fats: 8, fiber: 0,
+    healthScore: 75, recommendation: "Good Choice", confidenceScore: 100
+  },
+  banana: {
+    foodName: "Banana (Medium)",
+    servingSize: "1 medium (118g)",
+    calories: 105, protein: 1.3, carbs: 27, fats: 0.3, fiber: 3.1,
+    healthScore: 85, recommendation: "Good Choice", confidenceScore: 100
+  },
+  whey: {
+    foodName: "Whey Protein Isolate",
+    servingSize: "1 scoop (30g)",
+    calories: 120, protein: 25, carbs: 1, fats: 0.5, fiber: 0,
+    healthScore: 90, recommendation: "Excellent Choice", confidenceScore: 100
+  },
+  biryani: {
+    foodName: "Chicken Biryani",
+    servingSize: "1 plate (approx. 350g)",
+    calories: 550, protein: 24, carbs: 70, fats: 18, fiber: 3.5,
+    healthScore: 50, recommendation: "Occasional Choice", confidenceScore: 100
+  },
+  chickenbiryani: {
+    foodName: "Chicken Biryani",
+    servingSize: "1 plate (approx. 350g)",
+    calories: 550, protein: 24, carbs: 70, fats: 18, fiber: 3.5,
+    healthScore: 50, recommendation: "Occasional Choice", confidenceScore: 100
+  },
+  keralameals: {
+    foodName: "Traditional Kerala Meals",
+    servingSize: "1 traditional serving (Matta rice, avial, thoran, sambar)",
+    calories: 650, protein: 15, carbs: 95, fats: 14, fiber: 8,
+    healthScore: 78, recommendation: "Good Choice", confidenceScore: 100
+  },
+  apple: {
+    foodName: "Fresh Apple",
+    servingSize: "1 medium apple (approx. 182g)",
+    calories: 95, protein: 0.5, carbs: 25, fats: 0.3, fiber: 4.4,
+    healthScore: 95, recommendation: "Excellent Choice", confidenceScore: 100
+  },
+  shawarma: {
+    foodName: "Chicken Shawarma Wrap",
+    servingSize: "1 wrap (approx. 250g)",
+    calories: 480, protein: 26, carbs: 40, fats: 22, fiber: 2,
+    healthScore: 42, recommendation: "Avoid Frequently", confidenceScore: 100
+  },
+  eggomelette: {
+    foodName: "Egg Omelette (2 Eggs)",
+    servingSize: "1 plate (2 eggs, oil, onions)",
+    calories: 190, protein: 13, carbs: 2, fats: 15, fiber: 0.5,
+    healthScore: 80, recommendation: "Good Choice", confidenceScore: 100
+  },
+  paneerbuttermasala: {
+    foodName: "Paneer Butter Masala",
+    servingSize: "1 bowl (approx. 200g)",
+    calories: 380, protein: 12, carbs: 14, fats: 32, fiber: 1.5,
+    healthScore: 45, recommendation: "Occasional Choice", confidenceScore: 100
+  }
+};
+
+export function findLocalFoodAnalysis(query: string) {
+  const normalized = query.toLowerCase().replace(/[\s-_]/g, "").replace(/[^a-z0-9]/g, "");
+  if (!normalized) return null;
+
+  if (OFFLINE_FOOD_DATABASE[normalized]) {
+    return OFFLINE_FOOD_DATABASE[normalized];
+  }
+
+  for (const key of Object.keys(OFFLINE_FOOD_DATABASE)) {
+    if (normalized === key || normalized.includes(key) || key.includes(normalized)) {
+      return OFFLINE_FOOD_DATABASE[key];
+    }
+  }
+
+  return null;
+}
+
+export function generateLocalPersonalizedRecommendation(
+  foodName: string,
+  macros: { calories: number; protein: number; carbs: number; fats: number; fiber: number },
+  profile: IUserProfile
+): { healthScore: number; recommendation: "Excellent Choice" | "Good Choice" | "Occasional Choice" | "Avoid Frequently"; personalizedRecommendation: string } {
+  const goal = profile.goal || "maintain weight";
+  const lowerGoal = goal.toLowerCase();
+  let recommendation: "Excellent Choice" | "Good Choice" | "Occasional Choice" | "Avoid Frequently" = "Good Choice";
+  let advice = "";
+  let healthScore = 75;
+
+  const isHighProtein = macros.protein > 15;
+  const isHighCalorie = macros.calories > 400;
+  const isHighFiber = macros.fiber > 4;
+
+  if (lowerGoal.includes("lose") || lowerGoal.includes("deficit") || lowerGoal.includes("cut")) {
+    if (isHighCalorie) {
+      recommendation = "Occasional Choice";
+      advice = `Based on your weight loss goal, this food is relatively calorie-dense (${macros.calories} kcal) and should be consumed occasionally to stay within your daily budget constraint.`;
+      healthScore = Math.max(45, healthScore - 15);
+    } else {
+      recommendation = "Good Choice";
+      advice = `Based on your weight loss goal, this is a calorie-conscious choice that helps you manage your deficit target.`;
+      if (isHighFiber) {
+        recommendation = "Excellent Choice";
+        advice += " Its high fiber content supports digestive satiety.";
+        healthScore = Math.min(100, healthScore + 15);
+      }
+    }
+  } else if (lowerGoal.includes("gain") || lowerGoal.includes("surplus") || lowerGoal.includes("bulk")) {
+    if (isHighProtein) {
+      recommendation = "Excellent Choice";
+      advice = `Based on your muscle gain goal, this is an excellent choice as it provides a solid amount of protein (${macros.protein}g) to support lean muscle building.`;
+      healthScore = Math.min(100, healthScore + 20);
+    } else if (isHighCalorie) {
+      recommendation = "Good Choice";
+      advice = `Based on your muscle gain goal, this meal provides clean calorie density to help you hit your daily caloric surplus target.`;
+      healthScore = Math.min(100, healthScore + 10);
+    } else {
+      recommendation = "Occasional Choice";
+      advice = `Based on your muscle gain goal, this choice is low in calories and protein, making it less optimal for hitting your daily metabolic targets.`;
+      healthScore = Math.max(50, healthScore - 5);
+    }
+  } else {
+    // Maintain weight
+    advice = `Based on your weight maintenance goal, this is a balanced meal option to sustain your daily activity energy requirements.`;
+    if (isHighProtein) {
+      recommendation = "Good Choice";
+      healthScore = Math.min(100, healthScore + 10);
+    }
+  }
+
+  return {
+    healthScore,
+    recommendation,
+    personalizedRecommendation: advice
+  };
+}
+
+export async function analyzeFoodAI(
+  input: { foodName?: string; base64Image?: string; mimeType?: string },
+  profile: IUserProfile
+): Promise<IFoodAnalysis> {
+  const isImage = !!input.base64Image;
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  // Exact local database match logic
+  if (!isImage && input.foodName) {
+    const localMatch = findLocalFoodAnalysis(input.foodName);
+    if (localMatch) {
+      console.log(`Local match found for: ${input.foodName}. Using exact database values.`);
+      const localAdvice = generateLocalPersonalizedRecommendation(
+        localMatch.foodName,
+        {
+          calories: localMatch.calories,
+          protein: localMatch.protein,
+          carbs: localMatch.carbs,
+          fats: localMatch.fats,
+          fiber: localMatch.fiber
+        },
+        profile
+      );
+
+      // If online, use Gemini to refine the advice using the exact local numbers.
+      if (apiKey) {
+        try {
+          const ai = new GoogleGenAI({ apiKey });
+          const prompt = `
+            You are an expert nutritionist and clinical AI food advisor.
+            The user wants to analyze the food "${localMatch.foodName}".
+            We have confirmed the exact nutritional values for a serving size of "${localMatch.servingSize}":
+            - Calories: ${localMatch.calories} kcal
+            - Protein: ${localMatch.protein}g
+            - Carbohydrates: ${localMatch.carbs}g
+            - Fats: ${localMatch.fats}g
+            - Fiber: ${localMatch.fiber}g
+
+            User Profile Context:
+            - Age: ${profile.age} years
+            - Gender: ${profile.gender}
+            - Weight: ${profile.weight} kg
+            - Height: ${profile.height} cm
+            - Goal: ${profile.goal}
+            - Activity level: ${profile.activityLevel}
+            - Diet preference: ${profile.dietType || "Any"}
+
+            Provide a customized, encouraging, personalized recommendation explaining WHY this food fits their profile based on these numbers (1-2 sentences). 
+            Also assign a Health Score (0-100) and recommendation category strictly as one of: "Excellent Choice", "Good Choice", "Occasional Choice", "Avoid Frequently".
+
+            You MUST respond with a JSON object matching this schema exactly:
+            {
+              "foodName": "${localMatch.foodName}",
+              "servingSize": "${localMatch.servingSize}",
+              "calories": ${localMatch.calories},
+              "protein": ${localMatch.protein},
+              "carbs": ${localMatch.carbs},
+              "fats": ${localMatch.fats},
+              "fiber": ${localMatch.fiber},
+              "healthScore": number,
+              "recommendation": "Excellent Choice" | "Good Choice" | "Occasional Choice" | "Avoid Frequently",
+              "personalizedRecommendation": "Your custom advice sentence."
+            }
+          `;
+
+          const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+              responseMimeType: "application/json",
+            },
+          });
+
+          const jsonText = response.text || "";
+          const cleanJsonText = jsonText.replace(/^\s*```json\s*/i, "").replace(/\s*```\s*$/, "");
+          const apiResult = JSON.parse(cleanJsonText);
+
+          return {
+            foodName: apiResult.foodName,
+            servingSize: apiResult.servingSize,
+            calories: Math.round(Number(apiResult.calories)),
+            protein: Number(apiResult.protein),
+            carbohydrates: Number(apiResult.carbs),
+            fat: Number(apiResult.fats),
+            fiber: Number(apiResult.fiber),
+            healthScore: Math.round(Number(apiResult.healthScore)),
+            recommendation: apiResult.recommendation,
+            personalizedRecommendation: apiResult.personalizedRecommendation,
+            confidenceScore: 100
+          };
+        } catch (apiErr) {
+          console.error("Failed to query Gemini for local match personalization, falling back to local template:", apiErr);
+        }
+      }
+
+      // Offline mode or API error fallback for exact match
+      return {
+        foodName: localMatch.foodName,
+        servingSize: localMatch.servingSize,
+        calories: localMatch.calories,
+        protein: localMatch.protein,
+        carbohydrates: localMatch.carbs,
+        fat: localMatch.fats,
+        fiber: localMatch.fiber,
+        healthScore: localAdvice.healthScore,
+        recommendation: localAdvice.recommendation,
+        personalizedRecommendation: localAdvice.personalizedRecommendation,
+        confidenceScore: 100
+      };
+    }
+  }
+
+  // Graceful offline fallback when API key is missing
+  if (!apiKey) {
+    console.log("No GEMINI_API_KEY. Using local/mock Food Analysis engine.");
+    if (isImage) {
+      // Offline visual mock
+      const mockMacros = { calories: 380, protein: 18, carbs: 45, fats: 12, fiber: 5 };
+      const localAdvice = generateLocalPersonalizedRecommendation("Healthy Balanced Plate", mockMacros, profile);
+      return {
+        foodName: "Balanced Plate (Detected Offline)",
+        servingSize: "1 plate (approx. 300g)",
+        calories: mockMacros.calories,
+        protein: mockMacros.protein,
+        carbohydrates: mockMacros.carbs,
+        fat: mockMacros.fats,
+        fiber: mockMacros.fiber,
+        healthScore: localAdvice.healthScore,
+        recommendation: localAdvice.recommendation,
+        personalizedRecommendation: `${localAdvice.personalizedRecommendation} [Offline mode mock image detection]`,
+        confidenceScore: 85
+      };
+    } else {
+      // Offline text match not matched in dictionary
+      const mockMacros = { calories: 200, protein: 6, carbs: 30, fats: 5, fiber: 2.5 };
+      const localAdvice = generateLocalPersonalizedRecommendation(input.foodName || "Custom Item", mockMacros, profile);
+      return {
+        foodName: input.foodName || "Custom Item",
+        servingSize: "1 serving (approx. 100g)",
+        calories: mockMacros.calories,
+        protein: mockMacros.protein,
+        carbohydrates: mockMacros.carbs,
+        fat: mockMacros.fats,
+        fiber: mockMacros.fiber,
+        healthScore: localAdvice.healthScore,
+        recommendation: localAdvice.recommendation,
+        personalizedRecommendation: localAdvice.personalizedRecommendation,
+        confidenceScore: 100
+      };
+    }
+  }
+
+  // Active Gemini flow
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const prompt = `
+      You are an expert nutritionist and clinical AI food analyzer.
+      Analyze the food item ${isImage ? "visible in the provided image" : "with the name: '" + input.foodName + "'"}.
+
+      User Profile Context:
+      - Age: ${profile.age} years
+      - Biological Gender: ${profile.gender}
+      - Weight: ${profile.weight} kg
+      - Height: ${profile.height} cm
+      - Goal: ${profile.goal}
+      - Activity Level: ${profile.activityLevel}
+      - Diet Preference: ${profile.dietType || "Any"}
+
+      Tasks:
+      1. Identify the food item ${isImage ? "from the image" : ""}.
+      2. Estimate a standard serving size for this item (e.g. "1 medium plate", "100g", "1 medium piece").
+      3. Estimate the nutritional values for this estimated serving size:
+         - Calories (kcal, integer)
+         - Protein (g, number)
+         - Carbohydrates (g, number)
+         - Fat (g, number)
+         - Fiber (g, number)
+      4. Calculate a Health Score (0 to 100) reflecting its nutritional density, glycemic load, and balance relative to general metabolic health.
+      5. Determine the recommendation category strictly as one of:
+         - "Excellent Choice"
+         - "Good Choice"
+         - "Occasional Choice"
+         - "Avoid Frequently"
+      6. Provide a personalized recommendation rationale explaining WHY this food fits their specific profile goal (e.g., weight loss, muscle gain). Tailor the tone to their goal and activity level.
+      7. ${isImage ? "Determine your confidence score as an integer percentage (e.g., 85) for identifying this food item correctly." : "For text queries, output a default confidence score of 100."}
+
+      You MUST respond with a JSON object matching this schema exactly:
+      {
+        "foodName": "Name of the food identified",
+        "servingSize": "Estimated serving size (e.g. 1 plate, 150g)",
+        "calories": number,
+        "protein": number,
+        "carbs": number,
+        "fats": number,
+        "fiber": number,
+        "healthScore": number,
+        "recommendation": "Excellent Choice" | "Good Choice" | "Occasional Choice" | "Avoid Frequently",
+        "personalizedRecommendation": "Your custom advice sentence.",
+        "confidenceScore": number
+      }
+    `;
+
+    const contents: any[] = [];
+    if (isImage && input.base64Image && input.mimeType) {
+      contents.push({
+        inlineData: {
+          data: input.base64Image,
+          mimeType: input.mimeType
+        }
+      });
+    }
+    contents.push(prompt);
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents,
+      config: {
+        responseMimeType: "application/json",
+      }
+    });
+
+    const jsonText = response.text || "";
+    const cleanJsonText = jsonText.replace(/^\s*```json\s*/i, "").replace(/\s*```\s*$/, "");
+    const result = JSON.parse(cleanJsonText);
+
+    // Map properties from JSON output structure to our component types
+    return {
+      foodName: result.foodName,
+      servingSize: result.servingSize,
+      calories: Math.round(Number(result.calories)),
+      protein: Number(result.protein),
+      carbohydrates: Number(result.carbs),
+      fat: Number(result.fats),
+      fiber: Number(result.fiber),
+      healthScore: Math.round(Number(result.healthScore)),
+      recommendation: result.recommendation,
+      personalizedRecommendation: result.personalizedRecommendation,
+      confidenceScore: result.confidenceScore ? Math.round(Number(result.confidenceScore)) : (isImage ? 85 : 100)
+    };
+  } catch (err) {
+    console.error("Failed to query Gemini for food analysis:", err);
+    // Dynamic local fallback on error
+    const fallbackMacros = { calories: 300, protein: 12, carbs: 40, fats: 10, fiber: 3.5 };
+    const localAdvice = generateLocalPersonalizedRecommendation(input.foodName || "Custom Food Item", fallbackMacros, profile);
+    return {
+      foodName: input.foodName || "Custom Food Item (Fallback)",
+      servingSize: "1 serving (approx. 200g)",
+      calories: fallbackMacros.calories,
+      protein: fallbackMacros.protein,
+      carbohydrates: fallbackMacros.carbs,
+      fat: fallbackMacros.fats,
+      fiber: fallbackMacros.fiber,
+      healthScore: localAdvice.healthScore,
+      recommendation: localAdvice.recommendation,
+      personalizedRecommendation: `We encountered an error connecting to our AI server, but here is a standard projection: ${localAdvice.personalizedRecommendation}`,
+      confidenceScore: 70
+    };
+  }
+}
+

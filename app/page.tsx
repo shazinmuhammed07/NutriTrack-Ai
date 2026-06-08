@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import FoodAnalyzer from "@/app/components/FoodAnalyzer";
 import {
   Activity,
   Apple,
@@ -446,7 +447,7 @@ export default function Home() {
 
           {/* DB Status */}
           <div className="hidden sm:flex items-center space-x-2">
-            <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold flex items-center gap-1.5 ${isDbConnected ? "bg-[#111111]/5 dark:bg-[#fafafa]/5 border-[#e4e4e7] dark:border-[#27272a] text-[#111111] dark:text-[#fafafa]" : "bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-550"} shadow-sm`}>
+            <span className={`px-2.5 py-1 rounded-full border text-[10px] font-bold flex items-center gap-1.5 ${isDbConnected ? "bg-[#111111]/5 dark:bg-[#fafafa]/5 border-[#e4e4e7] dark:border-[#27272a] text-[#111111] dark:text-[#fafafa]" : "bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-500"} shadow-sm`}>
               <span className={`h-1.5 w-1.5 rounded-full ${isDbConnected ? "bg-[#111111] dark:bg-white animate-pulse" : "bg-zinc-400"}`}></span>
               {isDbConnected ? "Sync On" : "Local Storage"}
             </span>
@@ -689,7 +690,7 @@ export default function Home() {
                 <div className="flex justify-center items-center mt-4">
                   <div className="relative w-24 h-24 flex items-center justify-center">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="42" className="stroke-zinc-150 dark:stroke-zinc-800" strokeWidth="6" fill="transparent" />
+                      <circle cx="50" cy="50" r="42" className="stroke-zinc-200 dark:stroke-zinc-800" strokeWidth="6" fill="transparent" />
                       <circle cx="50" cy="50" r="42" className="stroke-black dark:stroke-white progress-ring-circle" strokeWidth="6" fill="transparent"
                         strokeDasharray={2 * Math.PI * 42}
                         strokeDashoffset={2 * Math.PI * 42 * (1 - Math.min(100, Math.round((currentPlan.targetCalories / currentPlan.maintenanceCalories) * 100)) / 100)}
@@ -993,6 +994,22 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Food Analyzer AI Section */}
+            <div className="no-print">
+              <FoodAnalyzer
+                profile={currentPlan ? {
+                  age: currentPlan.age,
+                  gender: currentPlan.gender,
+                  height: currentPlan.height,
+                  weight: currentPlan.weight,
+                  activityLevel: currentPlan.activityLevel,
+                  goal: currentPlan.goal,
+                  dietType: currentPlan.dietType
+                } : null}
+                onProfileRedirect={() => router.push("/calculate")}
+              />
+            </div>
+
             {/* Nutrition Intelligence Panel (AI Assistant Redesign) */}
             <div className="bg-white dark:bg-[#121214] border border-[#e4e4e7] dark:border-[#27272a] rounded-3xl p-6 shadow-md flex flex-col gap-4 chat-panel no-print">
               <div className="border-b border-[#e4e4e7] dark:border-[#27272a] pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -1089,7 +1106,7 @@ export default function Home() {
                 )}
 
                 {chatError && (
-                  <div className="p-3 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-550 rounded-xl text-[10px] text-center font-bold">
+                  <div className="p-3 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl text-[10px] text-center font-bold">
                     {chatError}
                   </div>
                 )}
@@ -1192,7 +1209,7 @@ export default function Home() {
 
             {/* Concentric Progress Ring Illustration */}
             <div className="flex-shrink-0 flex justify-center items-center relative py-6 w-full md:w-auto">
-              <div className="absolute h-48 w-48 sm:h-56 sm:w-56 bg-zinc-150 dark:bg-zinc-900 rounded-full filter blur-3xl opacity-40"></div>
+              <div className="absolute h-48 w-48 sm:h-56 sm:w-56 bg-zinc-200 dark:bg-zinc-900 rounded-full filter blur-3xl opacity-40"></div>
 
               <svg className="w-full max-w-[200px] sm:max-w-[280px] h-auto object-contain relative z-10 animate-float" viewBox="0 0 120 120">
                 {/* Outermost ring */}
